@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pull Sonson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#FFF8F4; --surface:#FFFFFF; --tint:#FDECE7;
+  --action:#C0405F; --action-deep:#9E2F4B;
+  --ink:#3A2E33; --ink-soft:#6E5C63; --line:#F0DCD6;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--base); color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  overflow:hidden; -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.blob{position:fixed; border-radius:50%; filter:blur(70px); opacity:.5; pointer-events:none; z-index:0}
+.b1{width:300px;height:300px;background:var(--tint);top:-90px;left:-80px}
+.b2{width:260px;height:260px;background:#F6E2EC;bottom:-80px;right:-70px}
+header{
+  position:fixed; top:0; left:0; right:0; z-index:3;
+  padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+  display:flex; align-items:center; gap:12px;
+}
+.back{
+  font-size:14px; color:var(--ink-soft); text-decoration:none;
+  background:var(--surface); border:1px solid var(--line);
+  padding:8px 14px; border-radius:999px; font-weight:500;
+}
+.back:hover{color:var(--action); border-color:var(--action)}
+.title{font-family:"Playfair Display",Georgia,serif; font-size:19px; margin:0; font-weight:600}
+.count{margin-left:auto; font-size:13px; color:var(--ink-soft); font-variant-numeric:tabular-nums}
+canvas{position:fixed; inset:0; z-index:1; touch-action:none; display:block}
+.hint{
+  position:fixed; z-index:3; left:16px; right:16px; margin:0;
+  bottom:calc(74px + env(safe-area-inset-bottom,0px));
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:999px; padding:11px 20px; font-size:14px; color:var(--ink-soft);
+  box-shadow:0 8px 24px rgba(58,46,51,.08); text-align:center;
+  transition:opacity .35s ease;
+}
+.hint b{color:var(--action); font-weight:600}
+.reset{
+  position:fixed; z-index:3; left:50%; transform:translateX(-50%);
+  bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  background:var(--action); color:#fff; border:0; border-radius:999px;
+  padding:11px 18px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;
+  box-shadow:0 8px 24px rgba(192,64,95,.25);
+}
+.reset:active{background:var(--action-deep)}
+@media (prefers-reduced-motion:reduce){.hint{transition:none}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+<header>
+  <a class="back" href="../">&larr; Back</a>
+  <h1 class="title">Pull Sonson</h1>
+  <span class="count" id="count">0 pulls</span>
+</header>
+<canvas id="c"></canvas>
+<p class="hint" id="hint">Grab his <b>hands</b> and pull. He is all yours.</p>
+<button class="reset" id="reset" hidden>Put him back</button>
+<img id="face" src="sonson.jpg" alt="" style="display:none">
+
+<script>
+(function(){
+var cv = document.getElementById("c"), ctx = cv.getContext("2d");
+var face = document.getElementById("face");
+var hint = document.getElementById("hint"), countEl = document.getElementById("count");
+var resetBtn = document.getElementById("reset");
+var W=0, H=0, DPR=1, scale=1, cx=0, top0=0;
+
+var LINES = [
+  "Yes Juju, that is my arm.",
+  "Ya3ni khalas, you win.",
+  "Careful, I am fragile.",
+  "He is enjoying this way too much.",
+  "Pull harder, he deserves it.",
+  "Sonson says: ouch (he is lying).",
+  "Still smiling. Always smiling for you.",
+  "You can keep him.",
+  "Okay okay I am sorry for whatever I did.",
+  "This is cheaper than therapy."
+];
+
+var P=[], S=[], pulls=0, dragging=null, pointer={x:0,y:0,down:false};
+var GRAV=0.55, FRICTION=0.99, ITER=14;
+
+function pt(x,y,pin){ return {x:x,y:y,px:x,py:y,pin:!!pin}; }
+function stick(a,b,stiff){ var dx=P[b].x-P[a].x, dy=P[b].y-P[a].y;
+  return {a:a,b:b,len:Math.sqrt(dx*dx+dy*dy),s:stiff===undefined?1:stiff}; }
+
+var IDX={};
+function build(){
+  var u = scale;
+  var y = top0;
+  P = [];
+  IDX.anchor = P.push(pt(cx, y-10, true))-1;
+  IDX.head   = P.push(pt(cx, y+70*u))-1;
+  IDX.neck   = P.push(pt(cx, y+118*u))-1;
+  IDX.chest  = P.push(pt(cx, y+160*u))-1;
+  IDX.hips   = P.push(pt(cx, y+240*u))-1;
+  IDX.lsh    = P.push(pt(cx-34*u, y+158*u))-1;
+  IDX.rsh    = P.push(pt(cx+34*u, y+158*u))-1;
+  IDX.lel    = P.push(pt(cx-72*u, y+212*u))-1;
+  IDX.rel    = P.push(pt(cx+72*u, y+212*u))-1;
+  IDX.lha    = P.push(pt(cx-96*u, y+270*u))-1;
+  IDX.rha    = P.push(pt(cx+96*u, y+270*u))-1;
+  IDX.lhi    = P.push(pt(cx-26*u, y+244*u))-1;
+  IDX.rhi    = P.push(pt(cx+26*u, y+244*u))-1;
+  IDX.lkn    = P.push(pt(cx-32*u, y+322*u))-1;
+  IDX.rkn    = P.push(pt(cx+32*u, y+322*u))-1;
+  IDX.lfo    = P.push(pt(cx-36*u, y+396*u))-1;
+  IDX.rfo    = P.push(pt(cx+36*u, y+396*u))-1;
+
+  S = [
+    stick(IDX.anchor, IDX.head, .9),
+    stick(IDX.head, IDX.neck), stick(IDX.neck, IDX.chest),
+    stick(IDX.chest, IDX.hips),
+    stick(IDX.neck, IDX.lsh), stick(IDX.neck, IDX.rsh),
+    stick(IDX.chest, IDX.lsh, .6), stick(IDX.chest, IDX.rsh, .6),
+    stick(IDX.lsh, IDX.rsh, .6),
+    stick(IDX.lsh, IDX.lel), stick(IDX.lel, IDX.lha),
+    stick(IDX.rsh, IDX.rel), stick(IDX.rel, IDX.rha),
+    stick(IDX.hips, IDX.lhi), stick(IDX.hips, IDX.rhi),
+    stick(IDX.lhi, IDX.rhi, .6),
+    stick(IDX.lsh, IDX.lhi, .5), stick(IDX.rsh, IDX.rhi, .5),
+    stick(IDX.lhi, IDX.lkn), stick(IDX.lkn, IDX.lfo),
+    stick(IDX.rhi, IDX.rkn), stick(IDX.rkn, IDX.rfo)
+  ];
+}
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  cv.style.width = W+"px"; cv.style.height = H+"px";
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  scale = Math.min(1.25, Math.max(.72, Math.min(W/420, H/640)));
+  cx = W/2;
+  top0 = Math.max(96, H*0.5 - 250*scale);
+  build();
+}
+
+function headR(){ return 40*scale; }
+
+function verlet(){
+  for(var i=0;i<P.length;i++){
+    var p=P[i]; if(p.pin) continue;
+    var vx=(p.x-p.px)*FRICTION, vy=(p.y-p.py)*FRICTION;
+    p.px=p.x; p.py=p.y;
+    p.x+=vx; p.y+=vy+GRAV;
+  }
+}
+function constrain(){
+  for(var k=0;k<ITER;k++){
+    for(var i=0;i<S.length;i++){
+      var s=S[i], a=P[s.a], b=P[s.b];
+      var dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||.001;
+      var diff=((s.len-d)/d)*s.s*0.5;
+      var ox=dx*diff, oy=dy*diff;
+      if(!a.pin){ a.x-=ox; a.y-=oy; }
+      if(!b.pin){ b.x+=ox; b.y+=oy; }
+    }
+    // keep inside the screen
+    var r=headR();
+    for(var j=0;j<P.length;j++){
+      var p=P[j]; if(p.pin) continue;
+      var pad = (j===IDX.head)? r+2 : 8;
+      if(p.x<pad){p.x=pad;} if(p.x>W-pad){p.x=W-pad;}
+      if(p.y>H-pad){ p.y=H-pad; p.px += (p.x-p.px)*0.4; }
+      if(p.y<pad){p.y=pad;}
+    }
+    if(dragging!==null){ P[dragging].x=pointer.x; P[dragging].y=pointer.y; }
+  }
+}
+
+function limb(a,b,w,col){
+  ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(P[a].x,P[a].y); ctx.lineTo(P[b].x,P[b].y); ctx.stroke();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var u=scale, h=P[IDX.head];
+  // string
+  ctx.strokeStyle="#E2CFC8"; ctx.lineWidth=2; ctx.setLineDash([5,6]);
+  ctx.beginPath(); ctx.moveTo(P[IDX.anchor].x,0); ctx.lineTo(h.x,h.y); ctx.stroke();
+  ctx.setLineDash([]);
+  // shadow
+  ctx.fillStyle="rgba(58,46,51,.06)";
+  ctx.beginPath(); ctx.ellipse(cx, H-14, 90*u, 12*u, 0, 0, Math.PI*2); ctx.fill();
+
+  var shirt="#3A2E33", skin="#D8A882";
+  // legs
+  limb(IDX.lhi,IDX.lkn,17*u,"#2F3340"); limb(IDX.lkn,IDX.lfo,15*u,"#2F3340");
+  limb(IDX.rhi,IDX.rkn,17*u,"#2F3340"); limb(IDX.rkn,IDX.rfo,15*u,"#2F3340");
+  ctx.fillStyle="#1F2430";
+  [IDX.lfo,IDX.rfo].forEach(function(i){
+    ctx.beginPath(); ctx.ellipse(P[i].x,P[i].y+4*u,13*u,8*u,0,0,Math.PI*2); ctx.fill();
+  });
+  // torso
+  ctx.fillStyle=shirt; ctx.beginPath();
+  ctx.moveTo(P[IDX.lsh].x,P[IDX.lsh].y); ctx.lineTo(P[IDX.rsh].x,P[IDX.rsh].y);
+  ctx.lineTo(P[IDX.rhi].x,P[IDX.rhi].y); ctx.lineTo(P[IDX.lhi].x,P[IDX.lhi].y);
+  ctx.closePath(); ctx.fill();
+  limb(IDX.lsh,IDX.rsh,26*u,shirt); limb(IDX.lhi,IDX.rhi,22*u,shirt);
+  limb(IDX.neck,IDX.hips,30*u,shirt);
+  // arms
+  limb(IDX.lsh,IDX.lel,15*u,shirt); limb(IDX.rsh,IDX.rel,15*u,shirt);
+  limb(IDX.lel,IDX.lha,12*u,skin);  limb(IDX.rel,IDX.rha,12*u,skin);
+  // hands
+  ctx.fillStyle=skin;
+  [IDX.lha,IDX.rha].forEach(function(i){
+    ctx.beginPath(); ctx.arc(P[i].x,P[i].y,10*u,0,Math.PI*2); ctx.fill();
+  });
+  if(dragging===null && pulls<1){
+    ctx.strokeStyle="rgba(192,64,95,.45)"; ctx.lineWidth=2;
+    [IDX.lha,IDX.rha].forEach(function(i){
+      ctx.beginPath(); ctx.arc(P[i].x,P[i].y,16*u+Math.sin(Date.now()/400)*2,0,Math.PI*2); ctx.stroke();
+    });
+  }
+  // neck
+  limb(IDX.head,IDX.neck,14*u,skin);
+  // head
+  var r=headR();
+  ctx.save();
+  ctx.beginPath(); ctx.arc(h.x,h.y,r,0,Math.PI*2); ctx.closePath();
+  ctx.shadowColor="rgba(58,46,51,.18)"; ctx.shadowBlur=14; ctx.shadowOffsetY=4;
+  ctx.fillStyle="#fff"; ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.clip();
+  if(face.complete && face.naturalWidth) ctx.drawImage(face,h.x-r,h.y-r,r*2,r*2);
+  ctx.restore();
+  ctx.strokeStyle="#fff"; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.arc(h.x,h.y,r,0,Math.PI*2); ctx.stroke();
+}
+
+function loop(){ verlet(); constrain(); draw(); requestAnimationFrame(loop); }
+
+function nearest(x,y){
+  var best=null, bd=56*scale;
+  for(var i=1;i<P.length;i++){
+    var d=Math.hypot(P[i].x-x,P[i].y-y);
+    if(d<bd){ bd=d; best=i; }
+  }
+  return best;
+}
+function say(t){ hint.innerHTML=t; hint.style.opacity="1"; }
+function pos(e){
+  var t = e.touches && e.touches[0] ? e.touches[0] : e;
+  return {x:t.clientX, y:t.clientY};
+}
+function down(e){
+  var p=pos(e); pointer.x=p.x; pointer.y=p.y;
+  var i=nearest(p.x,p.y);
+  if(i!==null){ dragging=i; pointer.down=true; e.preventDefault(); }
+}
+function move(e){
+  if(dragging===null) return;
+  var p=pos(e); pointer.x=p.x; pointer.y=p.y; e.preventDefault();
+}
+function up(){
+  if(dragging===null) return;
+  dragging=null; pointer.down=false;
+  pulls++; countEl.textContent = pulls + (pulls===1?" pull":" pulls");
+  say(LINES[Math.floor(Math.random()*LINES.length)]);
+  resetBtn.hidden=false;
+}
+cv.addEventListener("mousedown",down); window.addEventListener("mousemove",move);
+window.addEventListener("mouseup",up);
+cv.addEventListener("touchstart",down,{passive:false});
+window.addEventListener("touchmove",move,{passive:false});
+window.addEventListener("touchend",up); window.addEventListener("touchcancel",up);
+resetBtn.addEventListener("click",function(){ build(); say("There. Good as new."); });
+window.addEventListener("resize",resize);
+window.addEventListener("orientationchange",function(){ setTimeout(resize,200); });
+face.addEventListener("load",function(){});
+resize(); loop();
+})();
+</script>
+</body>
+</html>
