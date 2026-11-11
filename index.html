@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>For Juju</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -178,6 +183,104 @@
     .btn{padding:16px 28px}
   }
 
+  /* ---- mood + support flow ---- */
+  .tiles{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+  @media (max-width:420px){ .tiles{grid-template-columns:1fr} }
+  .tile{
+    display:flex;align-items:center;gap:12px;
+    font:inherit;color:var(--ink);text-align:left;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;padding:16px;cursor:pointer;min-height:64px;
+    transition:transform .18s var(--ease),border-color .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease);
+  }
+  .tile:hover:not(:disabled),.tile:focus-visible{
+    transform:translateY(-2px);border-color:var(--action);background:var(--tint);
+    box-shadow:0 10px 24px -20px rgba(58,46,51,.7);outline:none;
+  }
+  .tile .ico{font-size:24px;line-height:1;flex:0 0 auto}
+  .tile .tl{display:flex;flex-direction:column;gap:2px}
+  .tile .tl b{font-weight:600}
+  .tile .tl span{font-size:13px;color:var(--ink-soft)}
+  .tile.on{border-color:var(--action);background:var(--tint)}
+
+  .stack{display:grid;gap:10px}
+  .choice{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    font:inherit;font-weight:600;color:var(--ink);text-align:left;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:15px 16px;cursor:pointer;min-height:54px;
+    transition:transform .18s var(--ease),border-color .18s var(--ease),background .18s var(--ease);
+  }
+  .choice:hover,.choice:focus-visible{transform:translateY(-2px);border-color:var(--action);background:var(--tint);outline:none}
+  .choice .arw{color:var(--ink-soft);font-size:13px;font-weight:600}
+  .choice.primary{background:var(--action);color:#fff;border-color:var(--action)}
+  .choice.primary .arw{color:rgba(255,255,255,.75)}
+  .choice.primary:hover,.choice.primary:focus-visible{background:var(--action-deep);border-color:var(--action-deep)}
+
+  .mood-line{
+    font-family:"Playfair Display",Georgia,serif;font-size:clamp(19px,4vw,24px);
+    line-height:1.3;color:var(--ink);margin:0 0 20px;
+  }
+  .backrow{display:flex;justify-content:center;margin-top:18px}
+  .back{
+    appearance:none;background:none;border:0;cursor:pointer;font:inherit;
+    font-size:14px;color:var(--ink-soft);text-decoration:underline;
+    text-underline-offset:3px;padding:8px 10px;border-radius:8px;
+  }
+  .back:hover,.back:focus-visible{color:var(--action);outline:none}
+
+  .pick-list{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .pick{
+    font:inherit;font-size:14px;font-weight:600;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:999px;padding:10px 15px;cursor:pointer;min-height:44px;
+    transition:border-color .18s var(--ease),background .18s var(--ease),transform .18s var(--ease);
+  }
+  .pick:hover,.pick:focus-visible{border-color:var(--action);background:var(--tint);outline:none}
+  .pick.on{background:var(--action);border-color:var(--action);color:#fff}
+
+  .field{
+    width:100%;font:inherit;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:13px 15px;
+  }
+  .field:focus{outline:none;border-color:var(--action);box-shadow:0 0 0 3px var(--tint)}
+  textarea.field{min-height:132px;resize:vertical;line-height:1.6}
+  label.lab{display:block;font-size:12px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--tone-2);margin:0 0 8px}
+
+  .summary{
+    background:var(--tint);border-radius:16px;padding:16px 18px;margin:0 0 20px;
+  }
+  .summary p{margin:0;color:var(--ink)}
+  .summary .big{font-family:"Playfair Display",Georgia,serif;font-size:19px;font-weight:700;margin-bottom:4px}
+
+  .wa{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;text-decoration:none;font:inherit;font-weight:600;
+    background:var(--action);color:#fff;border:0;border-radius:999px;
+    padding:16px 24px;cursor:pointer;min-height:56px;
+    box-shadow:0 10px 22px -14px var(--action-deep);
+    transition:transform .18s var(--ease),background .18s var(--ease);
+  }
+  .wa:hover,.wa:focus-visible{background:var(--action-deep);transform:translateY(-2px);outline:none}
+  .wa svg{width:20px;height:20px;flex:0 0 auto}
+
+  .hint{font-size:13px;color:var(--ink-soft);text-align:center;margin:14px 0 0}
+  .cheatspot{
+    position:fixed;right:10px;bottom:10px;width:46px;height:46px;z-index:6;
+    background:none;border:0;cursor:default;opacity:.22;padding:0;
+  }
+  .cheatspot:focus-visible{outline:2px solid var(--action);border-radius:50%;opacity:1}
+  .cheatspot svg{width:18px;height:18px;margin:auto;display:block}
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;font-size:14px;font-weight:600;
+    padding:11px 18px;border-radius:999px;z-index:30;
+    box-shadow:0 12px 30px -14px rgba(58,46,51,.9);
+    animation:rise .3s var(--ease) both;
+  }
+
   [hidden]{display:none !important}
 
   @media (prefers-reduced-motion: reduce){
@@ -198,16 +301,85 @@
 
 <main class="wrap">
 
-  <!-- INTRO -->
-  <section class="card" id="screen-intro">
+  <!-- 1. MOOD -->
+  <section class="card" id="screen-mood">
     <p class="eyebrow">for juju</p>
     <h1>Bonsoir Mon Juju</h1>
-    <p class="lead">I know you're not in the mood and I don't know why. Just know you can talk to me about anything, and all the time.</p>
-    <p class="lead">In the meantime, here is a little path down memory lane over the best few months I've had, thanks to you.</p>
-    <div class="btn-row"><button class="btn" id="start">Start the walk down memory lane</button></div>
+    <p class="lead">Before anything else. How is Joue-Joue feeling right now?</p>
+    <div class="tiles" id="moods"></div>
+    <p class="hint">Whatever you pick, I'm here for it.</p>
   </section>
 
-  <!-- QUIZ -->
+  <!-- 2. MENU -->
+  <section class="card" id="screen-menu" hidden>
+    <p class="eyebrow" id="menu-eyebrow">joue-joue is</p>
+    <p class="mood-line" id="menu-line"></p>
+    <div class="stack" id="menu-options"></div>
+    <div class="backrow"><button class="back" data-go="screen-mood">Actually, I feel different</button></div>
+  </section>
+
+  <!-- 3. NEEDS -->
+  <section class="card" id="screen-needs" hidden>
+    <p class="eyebrow">tell sonson</p>
+    <h2 id="needs-title">What does Juju need right now?</h2>
+    <p>Pick the one that's loudest.</p>
+    <div class="tiles" id="needs"></div>
+    <div class="backrow"><button class="back" data-go="screen-menu">Back</button></div>
+  </section>
+
+  <!-- 4. MATCHA TEMPERATURE -->
+  <section class="card" id="screen-temp" hidden>
+    <p class="eyebrow">important question</p>
+    <h2>Matcha. Hot or cold?</h2>
+    <p>This changes everything.</p>
+    <div class="tiles" id="temps"></div>
+    <div class="backrow"><button class="back" data-go="screen-needs">Back</button></div>
+  </section>
+
+  <!-- 5. ACTIVITY -->
+  <section class="card" id="screen-activity" hidden>
+    <p class="eyebrow">something fun</p>
+    <h2>What are we doing?</h2>
+    <p>Pick one, or write your own idea at the bottom.</p>
+    <div class="pick-list" id="activities"></div>
+    <div style="margin-top:16px">
+      <label class="lab" for="own-idea">Your own idea</label>
+      <input class="field" id="own-idea" type="text" placeholder="Type anything. I'm in." autocomplete="off">
+    </div>
+    <div class="btn-row"><button class="btn" id="activity-next">That's the one</button></div>
+    <div class="backrow"><button class="back" data-go="screen-needs">Back</button></div>
+  </section>
+
+  <!-- 6. PLAN -->
+  <section class="card" id="screen-plan" hidden>
+    <p class="eyebrow">here's the plan</p>
+    <div class="summary" id="plan-summary"></div>
+    <div class="stack">
+      <a class="choice primary" id="plan-call" href="#"><span>Call Sonson now</span><span class="arw">→</span></a>
+      <button class="choice" id="plan-message"><span>Send Sonson a message</span><span class="arw">→</span></button>
+      <button class="choice" data-go="screen-needs"><span>Actually, I need something else</span><span class="arw">→</span></button>
+      <button class="choice" id="plan-memory"><span>Take a trip down memory lane</span><span class="arw">→</span></button>
+    </div>
+  </section>
+
+  <!-- 7. MESSAGE -->
+  <section class="card" id="screen-message" hidden>
+    <p class="eyebrow">to sonson</p>
+    <h2 id="message-title">Here's your message</h2>
+    <p>Change anything you want. Then send it.</p>
+    <label class="lab" for="msg">Message</label>
+    <textarea class="field" id="msg" rows="5"></textarea>
+    <div style="margin-top:18px">
+      <a class="wa" id="wa-send" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.8 14.2c-.2.7-1.2 1.3-1.9 1.4-.5.1-1.2.1-1.9-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5-4.5-.2-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.2-.3.6-.4.8-.4h.6c.2 0 .4 0 .7.5l.9 2.2c.1.2.1.4 0 .6l-.4.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.4.3.1.5.1.6-.1l.9-1c.2-.2.4-.2.6-.1l2.1 1c.3.1.5.2.5.4.1.1.1.6-.1 1.2z"/></svg>
+        <span>Open WhatsApp and send</span>
+      </a>
+    </div>
+    <p class="hint">It opens WhatsApp with this already typed. You still press send.</p>
+    <div class="backrow"><button class="back" id="message-back">Back</button></div>
+  </section>
+
+  <!-- 8. QUIZ -->
   <section class="card" id="screen-quiz" hidden>
     <div class="hearts" id="hearts" aria-label="hearts earned"></div>
     <div class="meta">
@@ -220,7 +392,7 @@
     <div class="btn-row"><button class="btn" id="next" hidden>Next</button></div>
   </section>
 
-  <!-- RESULT -->
+  <!-- 9. RESULT -->
   <section class="card center" id="screen-result" hidden>
     <div class="hearts" id="hearts2"></div>
     <p class="eyebrow">the verdict</p>
@@ -230,7 +402,7 @@
     <div class="btn-row"><button class="btn" id="ok">OK</button></div>
   </section>
 
-  <!-- FINAL LETTER -->
+  <!-- 10. LETTER -->
   <section class="card" id="screen-final" hidden>
     <div class="wash">
       <h2>One last thing</h2>
@@ -242,14 +414,64 @@ Hope remembering these little (not so little tbf) moments cheered you up like th
 
 And don't you worry, there's many many more to come.</p>
     <p class="sign">bahebek oxembellah ❤️</p>
-    <div class="btn-row"><button class="btn" id="again">Play again</button></div>
+    <div class="stack" style="margin-top:22px">
+      <button class="choice primary" id="final-talk"><span>Now tell Sonson what you need</span><span class="arw">→</span></button>
+      <button class="choice" id="again"><span>Play memory lane again</span><span class="arw">→</span></button>
+    </div>
   </section>
 
 </main>
 
+<button class="cheatspot" id="cheatspot" aria-label="nothing to see here" title="">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#C0405F" d="M12 21s-7.5-4.6-9.6-9A5.4 5.4 0 0 1 12 6.2 5.4 5.4 0 0 1 21.6 12c-2.1 4.4-9.6 9-9.6 9z"/></svg>
+</button>
+
 <script>
 (function(){
   "use strict";
+
+  /* Sonson's number. Egypt +20, mobile 1222152787. */
+  var SONSON_PHONE = "201222152787";
+  var SONSON_TEL   = "+201222152787";
+
+  var MOODS = [
+    { id:"happy", icon:"🥰", label:"Happy",
+      sub:"Good. Let's keep it that way",
+      line:"Happy Juju is my favourite Juju. Let's do something with it.",
+      open:"Sonson, I'm in a good mood" },
+    { id:"sad", icon:"🥺", label:"Sad",
+      sub:"Let's sort it out together",
+      line:"I'm sorry, habibti. Let's figure out what you need.",
+      open:"Sonson, I'm feeling sad" },
+    { id:"mad", icon:"😤", label:"Mad",
+      sub:"Tell me who. Then tell me what you need",
+      line:"Okay. Who do I need to have a word with? But first, what do you need?",
+      open:"Sonson, I'm mad" },
+    { id:"down", icon:"🫂", label:"Feeling down",
+      sub:"No explaining needed",
+      line:"I'm here. You don't have to explain anything to me, ever.",
+      open:"Sonson, I'm feeling a bit down" }
+  ];
+
+  var NEEDS = [
+    { id:"eat",       icon:"🍝", label:"Hungry",        sub:"Let's go out and eat",    phrase:"to go out and eat" },
+    { id:"coffee",    icon:"☕",       label:"Coffee",        sub:"Urgently",                phrase:"coffee, urgently" },
+    { id:"matcha",    icon:"🍵", label:"Matcha",        sub:"Desperate need",          phrase:"a matcha", temp:true },
+    { id:"tea",       icon:"🫖", label:"Tea",           sub:"Something warm",          phrase:"to go drink tea" },
+    { id:"cruise",    icon:"🚗", label:"Just cruise",   sub:"Windows down, no plan",   phrase:"to just cruise with you" },
+    { id:"fun",       icon:"🎯", label:"Something fun", sub:"Pick the activity",       phrase:"", fun:true },
+    { id:"chocolate", icon:"🍫", label:"Chocolate",     sub:"Non negotiable",          phrase:"chocolate" },
+    { id:"talk",      icon:"💬", label:"Just talk",     sub:"Nothing else needed",     phrase:"to just talk to you" }
+  ];
+
+  var ACTIVITIES = ["Bowling","Arcade","Karting","Cinema","Go out with friends",
+                    "Sit at home","Sleep","Go get chocolates","Mini golf","Padel",
+                    "Walk by the water","Board games","Bake something","Drive with loud music"];
+
+  var TEMPS = [
+    { id:"cold", icon:"🧊", label:"Iced",  sub:"The usual",       word:"iced" },
+    { id:"hot",  icon:"♨️", label:"Hot",   sub:"Cosy mode",       word:"hot" }
+  ];
 
   /* Every memory. `d` omitted = month only. `span` = a memory that covered two days. */
   var MONTHS = ["January","February","March","April","May","June",
@@ -307,6 +529,7 @@ And don't you worry, there's many many more to come.</p>
       note:"Felt like home already." }
   ];
 
+
   var TOTAL = 5;
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -314,6 +537,217 @@ And don't you worry, there's many many more to come.</p>
 
   var el = function(id){ return document.getElementById(id); };
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+  var SCREENS = ["screen-mood","screen-menu","screen-needs","screen-temp","screen-activity",
+                 "screen-plan","screen-message","screen-quiz","screen-result","screen-final"];
+
+  function show(id){
+    SCREENS.forEach(function(s){ el(s).hidden = (s !== id); });
+    window.scrollTo(0,0);
+    var h = el(id).querySelector("h1,h2");
+    if(h){ h.setAttribute("tabindex","-1"); h.focus({preventScroll:true}); }
+  }
+
+  /* ---------------- state ---------------- */
+  var state = { mood:null, need:null, temp:null, activity:null, askingForCall:false };
+
+  function moodById(id){ for(var i=0;i<MOODS.length;i++){ if(MOODS[i].id===id) return MOODS[i]; } return MOODS[0]; }
+  function needById(id){ for(var i=0;i<NEEDS.length;i++){ if(NEEDS[i].id===id) return NEEDS[i]; } return null; }
+
+  function needPhrase(){
+    var n = state.need ? needById(state.need) : null;
+    if(!n) return "";
+    if(n.fun) return state.activity ? ("to go do something fun: " + state.activity.toLowerCase()) : "to do something fun";
+    if(n.temp && state.temp) return (state.temp === "iced" ? "an " : "a ") + state.temp + " matcha";
+    return n.phrase;
+  }
+
+  function buildMessage(){
+    var m = moodById(state.mood);
+    if(state.askingForCall) return m.open + ". Can you call me when you can please? ❤️";
+    var p = needPhrase();
+    if(!p) return m.open + ". Can we talk? ❤️";
+    return m.open + ", and what I need right now is " + p + ". Can you make it happen? ❤️";
+  }
+
+  function tile(o, onPick){
+    var b = document.createElement("button");
+    b.className = "tile"; b.type = "button";
+    b.innerHTML = '<span class="ico">' + o.icon + '</span><span class="tl"><b>' +
+                  o.label + '</b><span>' + o.sub + '</span></span>';
+    b.addEventListener("click", function(){ onPick(o); });
+    return b;
+  }
+
+  function fill(host, list, onPick){
+    host.innerHTML = "";
+    list.forEach(function(o){ host.appendChild(tile(o, onPick)); });
+  }
+
+  /* ---------------- 1. mood ---------------- */
+  fill(el("moods"), MOODS, function(m){
+    state.mood = m.id; state.need = null; state.temp = null; state.activity = null;
+    openMenu();
+  });
+
+  /* ---------------- 2. menu ---------------- */
+  function menuOption(label, cls, fn){
+    var b = document.createElement("button");
+    b.className = "choice" + (cls ? " " + cls : ""); b.type = "button";
+    b.innerHTML = "<span>" + label + "</span><span class=\"arw\">→</span>";
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  function openMenu(){
+    var m = moodById(state.mood);
+    el("menu-eyebrow").textContent = "joue-joue is " + m.label.toLowerCase();
+    el("menu-line").textContent = m.line;
+
+    var host = el("menu-options");
+    host.innerHTML = "";
+    host.appendChild(menuOption(m.id === "happy" ? "Tell Sonson what you feel like doing"
+                                                 : "Tell Sonson what you need", "primary", function(){
+      el("needs-title").textContent = m.id === "happy" ? "What does Juju feel like doing?"
+                                                       : "What does Juju need right now?";
+      show("screen-needs");
+    }));
+
+    var call = document.createElement("a");
+    call.className = "choice"; call.href = "tel:" + SONSON_TEL;
+    call.innerHTML = "<span>Call Sonson now</span><span class=\"arw\">→</span>";
+    host.appendChild(call);
+
+    host.appendChild(menuOption("Ask Sonson to call you", "", function(){
+      state.askingForCall = true;
+      openMessage("Ask Sonson to call you");
+    }));
+    host.appendChild(menuOption("Take a trip down memory lane", "", startQuiz));
+    show("screen-menu");
+  }
+
+  /* ---------------- 3. needs ---------------- */
+  fill(el("needs"), NEEDS, function(n){
+    state.need = n.id; state.temp = null; state.activity = null;
+    if(n.temp){ show("screen-temp"); return; }
+    if(n.fun){ show("screen-activity"); return; }
+    openPlan();
+  });
+
+  /* ---------------- 4. matcha temperature ---------------- */
+  fill(el("temps"), TEMPS, function(t){ state.temp = t.word; openPlan(); });
+
+  /* ---------------- 5. activity ---------------- */
+  (function(){
+    var host = el("activities");
+    ACTIVITIES.forEach(function(name){
+      var b = document.createElement("button");
+      b.className = "pick"; b.type = "button"; b.textContent = name;
+      b.addEventListener("click", function(){
+        var on = host.querySelectorAll(".pick.on");
+        Array.prototype.forEach.call(on, function(x){ x.classList.remove("on"); });
+        b.classList.add("on");
+        state.activity = name;
+        el("own-idea").value = "";
+      });
+      host.appendChild(b);
+    });
+    el("own-idea").addEventListener("input", function(){
+      if(this.value.trim()){
+        var on = host.querySelectorAll(".pick.on");
+        Array.prototype.forEach.call(on, function(x){ x.classList.remove("on"); });
+      }
+    });
+    el("activity-next").addEventListener("click", function(){
+      var own = el("own-idea").value.trim();
+      if(own) state.activity = own;
+      if(!state.activity){ toast("Pick one, or type your own idea"); return; }
+      openPlan();
+    });
+  })();
+
+  /* ---------------- 6. plan ---------------- */
+  function openPlan(){
+    var m = moodById(state.mood);
+    var p = needPhrase();
+    el("plan-summary").innerHTML =
+      '<p class="big">Joue-Joue is ' + m.label.toLowerCase() + '</p>' +
+      '<p>' + (p ? "and needs " + p + "." : "and just wants to talk to you.") + '</p>';
+    el("plan-call").href = "tel:" + SONSON_TEL;
+    show("screen-plan");
+  }
+
+  el("plan-message").addEventListener("click", function(){
+    state.askingForCall = false;
+    openMessage("Here's your message");
+  });
+  el("plan-memory").addEventListener("click", startQuiz);
+
+  /* ---------------- 7. message ---------------- */
+  var messageBackTo = "screen-plan";
+
+  function syncWa(){
+    el("wa-send").href = "https://wa.me/" + SONSON_PHONE + "?text=" + encodeURIComponent(el("msg").value);
+  }
+
+  function openMessage(title){
+    messageBackTo = state.askingForCall ? "screen-menu" : "screen-plan";
+    el("message-title").textContent = title;
+    el("msg").value = buildMessage();
+    syncWa();
+    show("screen-message");
+  }
+
+  el("msg").addEventListener("input", syncWa);
+  el("message-back").addEventListener("click", function(){
+    state.askingForCall = false;
+    if(messageBackTo === "screen-menu") openMenu(); else openPlan();
+  });
+
+  /* ---------------- misc ---------------- */
+  var toastTimer = null;
+  function toast(text){
+    var old = document.querySelector(".toast");
+    if(old) old.remove();
+    var t = document.createElement("div");
+    t.className = "toast"; t.textContent = text;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.remove(); }, 2600);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-go]"), function(b){
+    b.addEventListener("click", function(){
+      var target = b.getAttribute("data-go");
+      if(target === "screen-menu") openMenu(); else show(target);
+    });
+  });
+
+  /* ---------------- cheat code: straight to memory lane ----------------
+     Type "sonson" on the first screen, or tap the faint heart 5 times. */
+  var typed = "";
+  document.addEventListener("keydown", function(e){
+    if(el("screen-mood").hidden) return;
+    if(e.key.length !== 1) return;
+    typed = (typed + e.key.toLowerCase()).slice(-12);
+    if(typed.indexOf("sonson") >= 0){ typed = ""; cheat(); }
+  });
+
+  var taps = 0, tapTimer = null;
+  el("cheatspot").addEventListener("click", function(){
+    if(el("screen-mood").hidden){ return; }
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(function(){ taps = 0; }, 1400);
+    if(taps >= 5){ taps = 0; cheat(); }
+  });
+
+  function cheat(){
+    if(!state.mood) state.mood = "happy";
+    toast("Cheat code ❤️ memory lane unlocked");
+    rainHearts(8);
+    startQuiz();
+  }
 
   function dateLabel(ev){
     if(ev.span) return ev.span;
@@ -382,11 +816,6 @@ And don't you worry, there's many many more to come.</p>
       d.innerHTML = HEART_SVG;
       container.appendChild(d);
     }
-  }
-
-  function show(id){
-    ["screen-intro","screen-quiz","screen-result","screen-final"].forEach(function(s){ el(s).hidden = (s !== id); });
-    window.scrollTo(0,0);
   }
 
   function render(){
@@ -481,11 +910,13 @@ And don't you worry, there's many many more to come.</p>
     show("screen-result");
   }
 
-  el("start").addEventListener("click", function(){
+
+  /* ---------------- memory lane wiring ---------------- */
+  function startQuiz(){
     quiz = buildQuiz(); index = 0; score = 0;
     show("screen-quiz");
     render();
-  });
+  }
 
   el("next").addEventListener("click", function(){
     index++;
@@ -497,13 +928,15 @@ And don't you worry, there's many many more to come.</p>
     rainHearts(18);
   });
 
-  el("again").addEventListener("click", function(){
-    quiz = buildQuiz(); index = 0; score = 0;
-    show("screen-quiz");
-    render();
+  el("again").addEventListener("click", startQuiz);
+
+  el("final-talk").addEventListener("click", function(){
+    if(!state.mood){ show("screen-mood"); return; }
+    openMenu();
   });
 
   drawHearts(el("hearts"), 0, -1);
+  show("screen-mood");
 })();
 </script>
 </body>
