@@ -251,40 +251,60 @@ And don't you worry, there's many many more to come.</p>
 (function(){
   "use strict";
 
+  /* Every memory. `d` omitted = month only. `span` = a memory that covered two days. */
+  var MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+
   var EVENTS = [
-    { date:"May 8, 2025",       what:"The first time we sat together at 1980",
-      decoys:["May 8, 2026","April 8, 2025","May 22, 2025"],
-      note:"Where it all quietly started." },
-    { date:"June 4, 2026",      what:"I met you at your pool house",
-      decoys:["June 14, 2026","July 4, 2026","June 4, 2025"],
+    { y:2024, m:1,          what:"The first time we actually met",
+      note:"Where the whole thing started, long before we knew it." },
+    { y:2025, m:5,  d:8,    what:"The first time we actually sat down at 1980",
+      note:"That one still feels like the real beginning." },
+    { y:2026, m:6,  d:4,    what:"The start of our friendship at your pool house",
       note:"The day everything actually began." },
-    { date:"June 5, 2026",      what:"Our first text (technically)",
-      decoys:["June 15, 2026","May 27, 2026","June 5, 2025"],
-      note:"Technically. Because on May 27 I texted you first and got left on read 😤" },
-    { date:"July 26, 2026",     what:"The first time I realized I liked you",
-      decoys:["July 16, 2026","August 6, 2026","July 29, 2026"],
-      note:"The suspicious little “oh no” moment." },
-    { date:"July 29, 2026",     what:"The day I knew for sure I liked you",
-      decoys:["July 19, 2026","August 9, 2026","July 26, 2026"],
+    { y:2026, m:6,  d:4,    what:"Our first text, technically",
+      note:"Technically. Because on May 27 I texted you first and got left on read \uD83D\uDE24" },
+    { y:2026, m:7,  d:26,   what:"The first time I realized I liked you",
+      note:"The suspicious little \u201Coh no\u201D moment." },
+    { y:2026, m:7,  d:29,   what:"The day I knew I liked you",
       note:"No more doubt after that one." },
-    { date:"August 11, 2026",   what:"We talked, became exclusive, and gave each other a real chance",
-      decoys:["August 1, 2026","August 21, 2026","July 11, 2026"],
+    { y:2026, m:8,  d:11,   what:"We had the talk and started dating",
       note:"Best decision either of us ever made." },
-    { date:"August 26, 2026",   what:"Our first real date date",
-      decoys:["August 16, 2026","August 27, 2026","September 6, 2026"],
+    { y:2026, m:8,  d:26,   what:"Our first real date date",
       note:"A proper one. Finally." },
-    { date:"August 27, 2026",   what:"Our first I love you",
-      decoys:["August 17, 2026","August 26, 2026","September 7, 2026"],
+    { y:2026, m:8,  d:27,   what:"Our first I love you",
       note:"And I meant it more every day since." },
-    { date:"August 30, 2026",   what:"I promised you I was going to marry you",
-      decoys:["August 20, 2026","September 10, 2026","August 31, 2026"],
+    { y:2026, m:8,  d:30,   what:"I promised you I was going to marry you",
       note:"Still standing by it, by the way." },
-    { date:"September 1, 2026", what:"Mon Sonson, you sent me a love letter",
-      decoys:["September 11, 2026","August 1, 2026","September 2, 2026"],
+    { y:2026, m:9,  d:1,    what:"Mon Sonson",
       note:"I still read it. Often." },
-    { date:"September 2, 2026", what:"I met Papa Juju",
-      decoys:["September 12, 2026","September 1, 2026","August 2, 2026"],
-      note:"Terrifying. Worth it." }
+    { y:2026, m:9,  d:2,    what:"I sat down with your papa",
+      note:"Terrifying. Worth it." },
+    { y:2026, m:9,  d:17,   what:"The first time you trained me pilates",
+      note:"I could not walk properly for days. Still came back." },
+    { y:2026, m:9,  d:21,   what:"Our papas sat down together",
+      note:"Two papas, one table. Big day." },
+    { y:2026, m:9,  d:25,   what:"The papas and the mamas sat down together",
+      note:"The whole committee, assembled." },
+    { y:2026, m:9,  d:30,   what:"You met Mama",
+      note:"She adored you before she even met you." },
+    { y:2026, m:10, d:3,    what:"You met Roosha (5alti)",
+      note:"Approved on the spot, obviously." },
+    { y:2026, m:10, d:6,    what:"Our first fight",
+      note:"Even that one I would not trade." },
+    { y:2026, m:10, d:9,    what:"Juju made me a brownie",
+      note:"Best brownie in the world, and I do not say that lightly." },
+    { y:2026, m:10, d:16,   what:"We went out to eat with your family for the first time",
+      note:"All of us around one table." },
+    { y:2026, m:10, d:18, span:"October 18 & 19, 2026",
+      what:"Juju cooked for me for the first time",
+      note:"You cooked, I ate everything. Twice." },
+    { y:2026, m:10, d:22,   what:"Our first time at the gym together",
+      note:"You carried me through that one." },
+    { y:2026, m:11, d:6,    what:"Our first time in a jewelry store together",
+      note:"Just looking. For now." },
+    { y:2026, m:11, d:9,    what:"The first time I ate at your house with your parents",
+      note:"Felt like home already." }
   ];
 
   var TOTAL = 5;
@@ -295,24 +315,58 @@ And don't you worry, there's many many more to come.</p>
   var el = function(id){ return document.getElementById(id); };
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
+  function dateLabel(ev){
+    if(ev.span) return ev.span;
+    if(!ev.d) return MONTHS[ev.m-1] + " " + ev.y;
+    return MONTHS[ev.m-1] + " " + ev.d + ", " + ev.y;
+  }
+
+  /* Real dates are never offered as decoys, so a wrong option is never also true. */
+  var REAL_DATES = EVENTS.map(dateLabel);
+  var DATE_COUNT = {};
+  REAL_DATES.forEach(function(d){ DATE_COUNT[d] = (DATE_COUNT[d]||0) + 1; });
+
+  function decoyDates(ev){
+    var out = [], i, dt, lab;
+    if(!ev.d){
+      var mOff = shuffle([-11,-8,-5,-3,-2,-1,1,2,3,5,8,11]);
+      for(i=0;i<mOff.length && out.length<3;i++){
+        dt = new Date(ev.y, ev.m - 1 + mOff[i], 1);
+        lab = MONTHS[dt.getMonth()] + " " + dt.getFullYear();
+        if(REAL_DATES.indexOf(lab) < 0 && out.indexOf(lab) < 0) out.push(lab);
+      }
+      return out;
+    }
+    var dOff = shuffle([-21,-14,-10,-7,-5,-4,-3,-2,-1,1,2,3,4,5,7,10,14,21,-30,30,-365,365]);
+    for(i=0;i<dOff.length && out.length<3;i++){
+      dt = new Date(ev.y, ev.m - 1, ev.d + dOff[i]);
+      lab = MONTHS[dt.getMonth()] + " " + dt.getDate() + ", " + dt.getFullYear();
+      if(REAL_DATES.indexOf(lab) < 0 && out.indexOf(lab) < 0) out.push(lab);
+    }
+    return out;
+  }
+
   var quiz=[], index=0, score=0, locked=false;
 
   function buildQuiz(){
     var picked = shuffle(EVENTS).slice(0, TOTAL);
     return picked.map(function(ev){
-      var askDate = Math.random() < 0.5;
+      var when = dateLabel(ev);
+      /* Two memories share June 4, so "what happened on" would have two right
+         answers. Those always get asked the other way round. */
+      var askDate = DATE_COUNT[when] > 1 || Math.random() < 0.5;
       if(askDate){
         return {
           prompt:"<span class=\"hl\">" + ev.what + "</span>. When was that?",
-          answer: ev.date,
-          options: shuffle([ev.date].concat(shuffle(ev.decoys).slice(0,3))),
+          answer: when,
+          options: shuffle([when].concat(decoyDates(ev))),
           note: ev.note
         };
       }
-      var others = shuffle(EVENTS.filter(function(o){ return o.date !== ev.date; })).slice(0,3)
-                    .map(function(o){ return o.what; });
+      var others = shuffle(EVENTS.filter(function(o){ return o.what !== ev.what; }))
+                     .slice(0,3).map(function(o){ return o.what; });
       return {
-        prompt:"What happened on <span class=\"hl\">" + ev.date + "</span>?",
+        prompt:"What happened on <span class=\"hl\">" + when + "</span>?",
         answer: ev.what,
         options: shuffle([ev.what].concat(others)),
         note: ev.note
