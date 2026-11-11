@@ -407,6 +407,7 @@
     <div class="opts" id="options"></div>
     <div class="feedback" id="feedback" aria-live="polite"></div>
     <div class="btn-row"><button class="btn" id="next" hidden>Next</button></div>
+    <div class="backrow"><button class="back" id="quiz-back">Back</button></div>
   </section>
 
   <!-- 9. RESULT -->
@@ -616,7 +617,7 @@ And don't you worry, there's many many more to come.</p>
   }
 
   /* ---------------- 0. start ---------------- */
-  el("start-memory").addEventListener("click", startQuiz);
+  el("start-memory").addEventListener("click", function(){ startQuiz("screen-start"); });
   el("start-else").addEventListener("click", function(){ show("screen-mood"); });
 
   /* ---------------- 1. mood ---------------- */
@@ -657,7 +658,7 @@ And don't you worry, there's many many more to come.</p>
       state.askingForCall = true;
       openMessage("Ask Sonson to call you");
     }));
-    host.appendChild(menuOption("Take a trip down memory lane", "", startQuiz));
+    host.appendChild(menuOption("Take a trip down memory lane", "", function(){ startQuiz("screen-menu"); }));
     show("screen-menu");
   }
 
@@ -716,7 +717,7 @@ And don't you worry, there's many many more to come.</p>
     state.askingForCall = false;
     openMessage("Here's your message");
   });
-  el("plan-memory").addEventListener("click", startQuiz);
+  el("plan-memory").addEventListener("click", function(){ startQuiz("screen-plan"); });
 
   /* ---------------- 7. message ---------------- */
   var messageBackTo = "screen-plan";
@@ -947,11 +948,22 @@ And don't you worry, there's many many more to come.</p>
 
 
   /* ---------------- memory lane wiring ---------------- */
-  function startQuiz(){
+  var quizFrom = "screen-start";
+
+  function startQuiz(from){
+    if(typeof from === "string") quizFrom = from;
     quiz = buildQuiz(); index = 0; score = 0;
     show("screen-quiz");
     render();
   }
+
+  function leaveQuiz(){
+    if(quizFrom === "screen-menu"){ openMenu(); return; }
+    if(quizFrom === "screen-plan"){ openPlan(); return; }
+    show("screen-start");
+  }
+
+  el("quiz-back").addEventListener("click", leaveQuiz);
 
   el("next").addEventListener("click", function(){
     index++;
@@ -963,7 +975,7 @@ And don't you worry, there's many many more to come.</p>
     rainHearts(18);
   });
 
-  el("again").addEventListener("click", startQuiz);
+  el("again").addEventListener("click", function(){ startQuiz(); });
 
   el("final-talk").addEventListener("click", function(){
     if(!state.mood){ show("screen-mood"); return; }
