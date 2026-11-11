@@ -206,7 +206,7 @@
   .stack{display:grid;gap:10px}
   .choice{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
-    font:inherit;font-weight:600;color:var(--ink);text-align:left;
+    font:inherit;font-weight:600;color:var(--ink);text-align:left;text-decoration:none;
     background:var(--surface);border:1px solid var(--line);
     border-radius:14px;padding:15px 16px;cursor:pointer;min-height:54px;
     transition:transform .18s var(--ease),border-color .18s var(--ease),background .18s var(--ease);
@@ -313,6 +313,7 @@
     <p class="lead">Do you want to take a trip down memory lane?</p>
     <div class="stack">
       <button class="choice primary" id="start-memory"><span>Yes, take me down memory lane</span><span class="arw">&rarr;</span></button>
+      <a class="choice" id="start-cake" href="cake/"><span>Play Catch the Cake</span><span class="arw">&rarr;</span></a>
       <button class="choice" id="start-else"><span>Something else</span><span class="arw">&rarr;</span></button>
     </div>
     <p class="hint">Either way, I'm here.</p>
