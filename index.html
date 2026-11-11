@@ -301,13 +301,25 @@
 
 <main class="wrap">
 
-  <!-- 1. MOOD -->
-  <section class="card" id="screen-mood">
+  <!-- 0. START -->
+  <section class="card" id="screen-start">
     <p class="eyebrow">for juju</p>
-    <h1>Bonsoir Mon Juju</h1>
-    <p class="lead">Before anything else. How is Joue-Joue feeling right now?</p>
+    <h1 id="greeting">Bonsoir Mon Juju</h1>
+    <p class="lead">Do you want to take a trip down memory lane?</p>
+    <div class="stack">
+      <button class="choice primary" id="start-memory"><span>Yes, take me down memory lane</span><span class="arw">&rarr;</span></button>
+      <button class="choice" id="start-else"><span>Something else</span><span class="arw">&rarr;</span></button>
+    </div>
+    <p class="hint">Either way, I'm here.</p>
+  </section>
+
+  <!-- 1. MOOD -->
+  <section class="card" id="screen-mood" hidden>
+    <p class="eyebrow">first things first</p>
+    <h2>How is Joue-Joue feeling right now?</h2>
+    <p>Whatever you pick, I'm here for it.</p>
     <div class="tiles" id="moods"></div>
-    <p class="hint">Whatever you pick, I'm here for it.</p>
+    <div class="backrow"><button class="back" data-go="screen-start">Back</button></div>
   </section>
 
   <!-- 2. MENU -->
@@ -538,14 +550,28 @@ And don't you worry, there's many many more to come.</p>
   var el = function(id){ return document.getElementById(id); };
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 
-  var SCREENS = ["screen-mood","screen-menu","screen-needs","screen-temp","screen-activity",
+  var SCREENS = ["screen-start","screen-mood","screen-menu","screen-needs","screen-temp","screen-activity",
                  "screen-plan","screen-message","screen-quiz","screen-result","screen-final"];
 
   function show(id){
+    if(id === "screen-start") setGreeting();
     SCREENS.forEach(function(s){ el(s).hidden = (s !== id); });
     window.scrollTo(0,0);
     var h = el(id).querySelector("h1,h2");
     if(h){ h.setAttribute("tabindex","-1"); h.focus({preventScroll:true}); }
+  }
+
+  /* Bonsoir from 5pm, Bonjour from midnight, always on Cairo time
+     no matter which timezone the phone is in. */
+  function cairoHour(){
+    try{
+      var f = new Intl.DateTimeFormat("en-GB", { timeZone:"Africa/Cairo", hour:"numeric", hour12:false });
+      var h = parseInt(f.format(new Date()), 10);
+      return isNaN(h) ? new Date().getHours() : (h % 24);
+    }catch(e){ return new Date().getHours(); }
+  }
+  function setGreeting(){
+    el("greeting").textContent = (cairoHour() >= 17 ? "Bonsoir" : "Bonjour") + " Mon Juju";
   }
 
   /* ---------------- state ---------------- */
@@ -583,6 +609,10 @@ And don't you worry, there's many many more to come.</p>
     host.innerHTML = "";
     list.forEach(function(o){ host.appendChild(tile(o, onPick)); });
   }
+
+  /* ---------------- 0. start ---------------- */
+  el("start-memory").addEventListener("click", startQuiz);
+  el("start-else").addEventListener("click", function(){ show("screen-mood"); });
 
   /* ---------------- 1. mood ---------------- */
   fill(el("moods"), MOODS, function(m){
@@ -727,7 +757,7 @@ And don't you worry, there's many many more to come.</p>
      Type "sonson" on the first screen, or tap the faint heart 5 times. */
   var typed = "";
   document.addEventListener("keydown", function(e){
-    if(el("screen-mood").hidden) return;
+    if(el("screen-start").hidden && el("screen-mood").hidden) return;
     if(e.key.length !== 1) return;
     typed = (typed + e.key.toLowerCase()).slice(-12);
     if(typed.indexOf("sonson") >= 0){ typed = ""; cheat(); }
@@ -735,7 +765,7 @@ And don't you worry, there's many many more to come.</p>
 
   var taps = 0, tapTimer = null;
   el("cheatspot").addEventListener("click", function(){
-    if(el("screen-mood").hidden){ return; }
+    if(el("screen-start").hidden && el("screen-mood").hidden){ return; }
     taps++;
     clearTimeout(tapTimer);
     tapTimer = setTimeout(function(){ taps = 0; }, 1400);
@@ -936,7 +966,8 @@ And don't you worry, there's many many more to come.</p>
   });
 
   drawHearts(el("hearts"), 0, -1);
-  show("screen-mood");
+  setGreeting();
+  show("screen-start");
 })();
 </script>
 </body>
