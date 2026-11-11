@@ -281,6 +281,11 @@
     animation:rise .3s var(--ease) both;
   }
 
+  /* Headings get focus when a screen opens so screen readers announce it.
+     That focus is programmatic, not the user tabbing, so no ring. */
+  h1[tabindex="-1"]:focus,
+  h2[tabindex="-1"]:focus{outline:none}
+
   [hidden]{display:none !important}
 
   @media (prefers-reduced-motion: reduce){
