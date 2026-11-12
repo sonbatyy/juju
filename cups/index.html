@@ -194,19 +194,20 @@ main{position:relative; z-index:1; flex:1; display:flex; flex-direction:column;
 (function(){
 var REASONS = [
   "You are the most beautiful there is",
-  "You are heartwarming",
-  "You make me the happiest",
+  "Your presence is so heartwarming",
+  "You make me as happy as a kid",
   "You have a kindness that is out of this world",
   "You are so cool",
   "You have the most beautiful smile",
   "You have splendid hair",
-  "You are so innocent",
+  "You have this cute innocence",
   "You are so loyal",
   "You are so trustworthy",
+  "You are so respectful",
   "You have the best manners",
   "You teach me etiquette",
-  "You are so supportive",
-  "You dress so well",
+  "You are very supportive",
+  "You are so fashionable it is out of this world",
   "You are the best smelling woman out there",
   "You are my baby girl \uD83D\uDE09",
   "You stand by your family principles",
@@ -230,9 +231,9 @@ var busy=true, round=0, cards=0;
 var CUPW=96, LIFT=-92;
 
 function used(){
-  try{ return JSON.parse(localStorage.getItem("juju-reasons")||"[]"); }catch(e){ return []; }
+  try{ return JSON.parse(localStorage.getItem("juju-reasons-v3")||"[]"); }catch(e){ return []; }
 }
-function saveUsed(a){ try{ localStorage.setItem("juju-reasons",JSON.stringify(a)); }catch(e){} }
+function saveUsed(a){ try{ localStorage.setItem("juju-reasons-v3",JSON.stringify(a)); }catch(e){} }
 function nextReason(){
   var u=used();
   if(u.length>=REASONS.length) u=[];
