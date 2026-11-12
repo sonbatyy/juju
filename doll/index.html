@@ -45,14 +45,19 @@ canvas{position:fixed; inset:0; z-index:1; touch-action:none; display:block}
   border-radius:999px; padding:11px 20px; font-size:14px; color:var(--ink-soft);
   box-shadow:0 8px 24px rgba(58,46,51,.08); text-align:center;
 }
-.reset{
-  position:fixed; z-index:3; left:50%; transform:translateX(-50%);
+.bar{
+  position:fixed; z-index:3; left:0; right:0;
   bottom:calc(20px + env(safe-area-inset-bottom,0px));
-  background:var(--action); color:#fff; border:0; border-radius:999px;
-  padding:11px 18px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;
-  box-shadow:0 8px 24px rgba(192,64,95,.25);
+  display:flex; justify-content:center; gap:10px; padding:0 16px;
 }
-.reset:active{background:var(--action-deep)}
+.btn{
+  border-radius:999px; padding:11px 18px; font-size:14px; font-weight:600;
+  font-family:inherit; cursor:pointer; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink);
+}
+.btn.primary{background:var(--action); color:#fff; border-color:var(--action);
+  box-shadow:0 8px 24px rgba(192,64,95,.25)}
+.btn.primary:active{background:var(--action-deep)}
 </style>
 </head>
 <body>
@@ -64,81 +69,81 @@ canvas{position:fixed; inset:0; z-index:1; touch-action:none; display:block}
 </header>
 <canvas id="c"></canvas>
 <p class="hint">This is cheaper than therapy.</p>
-<button class="reset" id="reset">Put him back</button>
+<div class="bar">
+  <button class="btn primary" id="cut">Cut the string</button>
+  <button class="btn" id="reset">Put him back</button>
+</div>
 <img id="face" src="sonson.jpg" alt="" style="display:none">
 
 <script>
 (function(){
-var cv = document.getElementById("c"), ctx = cv.getContext("2d");
-var face = document.getElementById("face");
-var countEl = document.getElementById("count");
-var resetBtn = document.getElementById("reset");
-var W=0, H=0, DPR=1, u=1, cx=0, top0=0, FLOORY=0;
+var cv=document.getElementById("c"), ctx=cv.getContext("2d");
+var face=document.getElementById("face");
+var countEl=document.getElementById("count");
+var cutBtn=document.getElementById("cut"), resetBtn=document.getElementById("reset");
 
-var P=[], S=[], MIN=[], ORDER=[], pulls=0;
-var drags = {};              // pointerId -> {i, x, y}
-var tied = true;             // is he still hanging from his string?
-var GRAV=0.6, FRICTION=0.985, ITER=16;
-var IDX={};
+var W=0,H=0,DPR=1,u=1,cx=0,top0=0,FLOORY=0;
+var P=[],S=[],MIN=[],JOINTS=[],IDX={};
+var drags={}, pulls=0, tied=true;
+var GRAV=0.62, FRICTION=0.986, ITER=10, RIG=4;
+var D=Math.PI/180;
 
 function pt(x,y,pin){ return {x:x,y:y,px:x,py:y,pin:!!pin}; }
 function stick(a,b,s){ var dx=P[b].x-P[a].x, dy=P[b].y-P[a].y;
   return {a:a,b:b,len:Math.sqrt(dx*dx+dy*dy),s:(s===undefined?1:s)}; }
-function mind(a,b,d){ return {a:a,b:b,d:d}; }
 
 function build(){
-  P=[]; tied=true;
+  P=[]; tied=true; cutBtn.disabled=false; cutBtn.textContent="Cut the string";
   var y=top0;
   function add(k,x,yy,pin){ IDX[k]=P.push(pt(cx+x*u, y+yy*u, pin))-1; }
   add("anchor",0,-12,true);
-  add("head",0,70); add("neck",0,118); add("chest",0,164); add("hips",0,256);
-  add("lsh",-44,156); add("rsh",44,156);
-  add("lel",-58,222); add("rel",58,222);
-  add("lha",-66,292); add("rha",66,292);
+  add("head",0,70); add("neck",0,118); add("chest",0,166); add("hips",0,256);
+  add("lsh",-44,158); add("rsh",44,158);
+  add("lel",-56,224); add("rel",56,224);
+  add("lha",-62,294); add("rha",62,294);
   add("lhi",-24,258); add("rhi",24,258);
   add("lkn",-28,352); add("rkn",28,352);
   add("lfo",-30,440); add("rfo",30,440);
 
-  S=[
-    stick(IDX.anchor,IDX.head,.85),
-    stick(IDX.head,IDX.neck), stick(IDX.neck,IDX.chest), stick(IDX.chest,IDX.hips),
-    stick(IDX.neck,IDX.lsh), stick(IDX.neck,IDX.rsh),
-    stick(IDX.chest,IDX.lsh), stick(IDX.chest,IDX.rsh),
-    stick(IDX.lsh,IDX.rsh),
-    stick(IDX.head,IDX.lsh,.35), stick(IDX.head,IDX.rsh,.35),
-    stick(IDX.lsh,IDX.lel), stick(IDX.lel,IDX.lha),
-    stick(IDX.rsh,IDX.rel), stick(IDX.rel,IDX.rha),
-    stick(IDX.hips,IDX.lhi), stick(IDX.hips,IDX.rhi), stick(IDX.lhi,IDX.rhi),
-    stick(IDX.lsh,IDX.lhi,.85), stick(IDX.rsh,IDX.rhi,.85),
-    stick(IDX.lsh,IDX.rhi,.5), stick(IDX.rsh,IDX.lhi,.5),
-    stick(IDX.lhi,IDX.lkn), stick(IDX.lkn,IDX.lfo),
-    stick(IDX.rhi,IDX.rkn), stick(IDX.rkn,IDX.rfo)
+  // ONE rigid torso: every pair of torso points braced solid
+  var body=[IDX.neck,IDX.chest,IDX.lsh,IDX.rsh,IDX.lhi,IDX.rhi,IDX.hips];
+  S=[];
+  for(var i=0;i<body.length;i++)
+    for(var j=i+1;j<body.length;j++) S.push(stick(body[i],body[j],1));
+  // one rigid bone per limb segment, one for the neck
+  S.push(stick(IDX.neck,IDX.head,1));
+  S.push(stick(IDX.lsh,IDX.lel,1)); S.push(stick(IDX.lel,IDX.lha,1));
+  S.push(stick(IDX.rsh,IDX.rel,1)); S.push(stick(IDX.rel,IDX.rha,1));
+  S.push(stick(IDX.lhi,IDX.lkn,1)); S.push(stick(IDX.lkn,IDX.lfo,1));
+  S.push(stick(IDX.rhi,IDX.rkn,1)); S.push(stick(IDX.rkn,IDX.rfo,1));
+  var STRING=S.push(stick(IDX.anchor,IDX.head,.5))-1;
+  IDX.string=STRING;
+
+  // joint limits, in degrees, measured off the parent bone
+  JOINTS=[
+    // shoulders: arms may swing out and up, never across the chest
+    {p:IDX.lsh, ra:IDX.neck, rb:IDX.hips, c:IDX.lel, sub:[IDX.lel,IDX.lha], lo:-22, hi:172},
+    {p:IDX.rsh, ra:IDX.neck, rb:IDX.hips, c:IDX.rel, sub:[IDX.rel,IDX.rha], lo:-172, hi:22},
+    // elbows
+    {p:IDX.lel, ra:IDX.lsh, rb:IDX.lel, c:IDX.lha, sub:[IDX.lha], lo:-142, hi:142},
+    {p:IDX.rel, ra:IDX.rsh, rb:IDX.rel, c:IDX.rha, sub:[IDX.rha], lo:-142, hi:142},
+    // hips
+    {p:IDX.lhi, ra:IDX.neck, rb:IDX.hips, c:IDX.lkn, sub:[IDX.lkn,IDX.lfo], lo:-62, hi:88},
+    {p:IDX.rhi, ra:IDX.neck, rb:IDX.hips, c:IDX.rkn, sub:[IDX.rkn,IDX.rfo], lo:-88, hi:62},
+    // knees
+    {p:IDX.lkn, ra:IDX.lhi, rb:IDX.lkn, c:IDX.lfo, sub:[IDX.lfo], lo:-140, hi:140},
+    {p:IDX.rkn, ra:IDX.rhi, rb:IDX.rkn, c:IDX.rfo, sub:[IDX.rfo], lo:-140, hi:140},
+    // neck
+    {p:IDX.neck, ra:IDX.hips, rb:IDX.neck, c:IDX.head, sub:[IDX.head], lo:-52, hi:52}
   ];
 
-  // keep limbs out of the body and off each other
+  // limbs keep out of the body and off each other
   MIN=[
-    mind(IDX.lel,IDX.chest,52), mind(IDX.rel,IDX.chest,52),
-    mind(IDX.lel,IDX.hips,54),  mind(IDX.rel,IDX.hips,54),
-    mind(IDX.lha,IDX.chest,58), mind(IDX.rha,IDX.chest,58),
-    mind(IDX.lha,IDX.hips,46),  mind(IDX.rha,IDX.hips,46),
-    mind(IDX.lha,IDX.neck,74),  mind(IDX.rha,IDX.neck,74),
-    mind(IDX.lel,IDX.rsh,96),   mind(IDX.rel,IDX.lsh,96),
-    mind(IDX.lha,IDX.rsh,104),  mind(IDX.rha,IDX.lsh,104),
-    mind(IDX.lha,IDX.rha,34),   mind(IDX.lel,IDX.rel,54),
-    mind(IDX.lkn,IDX.rkn,36),   mind(IDX.lfo,IDX.rfo,32),
-    mind(IDX.lkn,IDX.chest,96), mind(IDX.rkn,IDX.chest,96),
-    mind(IDX.lfo,IDX.hips,96),  mind(IDX.rfo,IDX.hips,96),
-    mind(IDX.lha,IDX.lfo,40),   mind(IDX.rha,IDX.rfo,40)
-  ];
-
-  // he stays a person: this is always above that, by at least this much
-  ORDER=[
-    [IDX.head,IDX.neck,34], [IDX.neck,IDX.chest,26],
-    [IDX.chest,IDX.hips,62], [IDX.lsh,IDX.lhi,66], [IDX.rsh,IDX.rhi,66],
-    [IDX.lsh,IDX.lel,14], [IDX.rsh,IDX.rel,14],
-    [IDX.lhi,IDX.lkn,52], [IDX.rhi,IDX.rkn,52],
-    [IDX.lkn,IDX.lfo,44], [IDX.rkn,IDX.rfo,44],
-    [IDX.head,IDX.chest,66], [IDX.head,IDX.hips,130]
+    {a:IDX.lha,b:IDX.chest,d:48},{a:IDX.rha,b:IDX.chest,d:48},
+    {a:IDX.lha,b:IDX.hips,d:40}, {a:IDX.rha,b:IDX.hips,d:40},
+    {a:IDX.lha,b:IDX.rha,d:30},  {a:IDX.lel,b:IDX.rel,d:48},
+    {a:IDX.lkn,b:IDX.rkn,d:32},  {a:IDX.lfo,b:IDX.rfo,d:28},
+    {a:IDX.lkn,b:IDX.chest,d:86},{a:IDX.rkn,b:IDX.chest,d:86}
   ];
 }
 
@@ -148,10 +153,9 @@ function resize(){
   cv.width=W*DPR; cv.height=H*DPR;
   cv.style.width=W+"px"; cv.style.height=H+"px";
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  u=Math.min(1.2, Math.max(.62, Math.min(W/460, (H-220)/560)));
-  cx=W/2;
-  FLOORY=H-104;
-  top0=Math.max(92, FLOORY*0.5 - 230*u);
+  u=Math.min(1.2,Math.max(.62,Math.min(W/460,(H-220)/560)));
+  cx=W/2; FLOORY=H-104;
+  top0=Math.max(92, FLOORY*0.5-230*u);
   build();
 }
 function headR(){ return 38*u; }
@@ -160,153 +164,152 @@ function verlet(){
   for(var i=0;i<P.length;i++){
     var p=P[i]; if(p.pin) continue;
     var vx=(p.x-p.px)*FRICTION, vy=(p.y-p.py)*FRICTION;
-    if(vx> 40) vx=40; if(vx<-40) vx=-40;
-    if(vy> 40) vy=40; if(vy<-40) vy=-40;
-    p.px=p.x; p.py=p.y;
-    p.x+=vx; p.y+=vy+GRAV;
+    if(vx>44)vx=44; if(vx<-44)vx=-44; if(vy>44)vy=44; if(vy<-44)vy=-44;
+    p.px=p.x; p.py=p.y; p.x+=vx; p.y+=vy+GRAV;
   }
 }
-function applyDrags(){
-  for(var id in drags){ var d=drags[id]; P[d.i].x=d.x; P[d.i].y=d.y; }
+function applyDrags(){ for(var id in drags){ var d=drags[id]; P[d.i].x=d.x; P[d.i].y=d.y; } }
+
+function solveStick(i){
+  var s=S[i], a=P[s.a], b=P[s.b];
+  var dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||.001;
+  var diff=((s.len-d)/d)*s.s*0.5, ox=dx*diff, oy=dy*diff;
+  if(!a.pin){ a.x-=ox; a.y-=oy; }
+  if(!b.pin){ b.x+=ox; b.y+=oy; }
 }
-function constrain(){
-  for(var k=0;k<ITER;k++){
-    var i,a,b,dx,dy,d,diff,ox,oy,s;
-    if(tied){
-      var ax=P[IDX.head].x-P[IDX.anchor].x, ay=P[IDX.head].y-P[IDX.anchor].y;
-      if(Math.sqrt(ax*ax+ay*ay) > S[0].len*2.1){ tied=false; }
-    }
-    for(i=(tied?0:1);i<S.length;i++){
-      s=S[i]; a=P[s.a]; b=P[s.b];
-      dx=b.x-a.x; dy=b.y-a.y; d=Math.sqrt(dx*dx+dy*dy)||.001;
-      diff=((s.len-d)/d)*s.s*0.5; ox=dx*diff; oy=dy*diff;
+function solveSticks(){
+  // the string is solved first, so his own bones always win over it
+  if(tied) solveStick(IDX.string);
+  for(var i=0;i<S.length;i++){ if(i!==IDX.string) solveStick(i); }
+}
+function solveMins(){
+  for(var i=0;i<MIN.length;i++){
+    var m=MIN[i], a=P[m.a], b=P[m.b], md=m.d*u;
+    var dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||.001;
+    if(d<md){
+      var diff=((md-d)/d)*0.5, ox=dx*diff, oy=dy*diff;
       if(!a.pin){ a.x-=ox; a.y-=oy; }
       if(!b.pin){ b.x+=ox; b.y+=oy; }
     }
-    for(i=0;i<MIN.length;i++){
-      s=MIN[i]; a=P[s.a]; b=P[s.b]; var md=s.d*u;
-      dx=b.x-a.x; dy=b.y-a.y; d=Math.sqrt(dx*dx+dy*dy)||.001;
-      if(d<md){
-        diff=((md-d)/d)*0.5; ox=dx*diff; oy=dy*diff;
-        if(!a.pin){ a.x-=ox; a.y-=oy; }
-        if(!b.pin){ b.x+=ox; b.y+=oy; }
-      }
-    }
-    for(i=0;i<ORDER.length;i++){
-      var o=ORDER[i]; a=P[o[0]]; b=P[o[1]]; var gap=o[2]*u;
-      if(b.y < a.y+gap){
-        var push=(a.y+gap-b.y)*0.5;
-        if(!a.pin) a.y-=push;
-        if(!b.pin) b.y+=push;
-      }
-    }
-    var r=headR();
-    for(i=0;i<P.length;i++){
-      var p=P[i]; if(p.pin) continue;
-      var pad=(i===IDX.head)?r+2:10*u;
-      var BOUNCE=0.45;
-      if(p.x<pad){ p.x=pad; p.px=p.x+(p.x-p.px)*BOUNCE; }
-      if(p.x>W-pad){ p.x=W-pad; p.px=p.x+(p.x-p.px)*BOUNCE; }
-      if(p.y<pad){ p.y=pad; p.py=p.y+(p.y-p.py)*BOUNCE; }
-      if(p.y>FLOORY-pad){
-        p.y=FLOORY-pad;
-        p.py=p.y+(p.y-p.py)*BOUNCE;
-        p.px+=(p.x-p.px)*0.22;   // a little floor friction
-      }
-    }
-    applyDrags();
   }
 }
+function rotateAbout(i,ox,oy,cos,sin){
+  var p=P[i];
+  var dx=p.x-ox, dy=p.y-oy;
+  p.x=ox+dx*cos-dy*sin; p.y=oy+dx*sin+dy*cos;
+  dx=p.px-ox; dy=p.py-oy;
+  p.px=ox+dx*cos-dy*sin; p.py=oy+dx*sin+dy*cos;
+}
+function solveJoints(){
+  for(var i=0;i<JOINTS.length;i++){
+    var j=JOINTS[i], piv=P[j.p];
+    var rx=P[j.rb].x-P[j.ra].x, ry=P[j.rb].y-P[j.ra].y;
+    var cxv=P[j.c].x-piv.x, cyv=P[j.c].y-piv.y;
+    var ang=Math.atan2(rx*cyv-ry*cxv, rx*cxv+ry*cyv);
+    var lo=j.lo*D, hi=j.hi*D, delta=0;
+    if(ang<lo) delta=lo-ang; else if(ang>hi) delta=hi-ang; else continue;
+    delta*=0.6;
+    var cos=Math.cos(delta), sin=Math.sin(delta);
+    for(var k=0;k<j.sub.length;k++) rotateAbout(j.sub[k],piv.x,piv.y,cos,sin);
+  }
+}
+function bounds(){
+  var r=headR(), B=0.42;
+  for(var i=0;i<P.length;i++){
+    var p=P[i]; if(p.pin) continue;
+    var pad=(i===IDX.head)?r+2:10*u;
+    if(p.x<pad){ p.x=pad; p.px=p.x+(p.x-p.px)*B; }
+    if(p.x>W-pad){ p.x=W-pad; p.px=p.x+(p.x-p.px)*B; }
+    if(p.y<pad){ p.y=pad; p.py=p.y+(p.y-p.py)*B; }
+    if(p.y>FLOORY-pad){
+      p.y=FLOORY-pad; p.py=p.y+(p.y-p.py)*B; p.px+=(p.x-p.px)*0.22;
+    }
+  }
+}
+function solve(){
+  for(var k=0;k<ITER;k++){
+    for(var r=0;r<RIG;r++) solveSticks();   // keep every part rigid
+    solveJoints();                          // then no joint may bend past a human
+    solveMins();
+    bounds();
+    applyDrags();
+  }
+  for(var r2=0;r2<RIG;r2++){ solveSticks(); applyDrags(); }
+  solveJoints(); bounds(); applyDrags();
+}
 
-var SHIRT="#39313A", SHIRT_D="#2B2430", SKIN="#D5A079", SKIN_D="#BE8A64",
-    JEAN="#2E3647", JEAN_D="#242B39", SHOE="#1A1F29";
+var SHIRT="#39313A",SHIRT_D="#2B2430",SKIN="#D5A079",SKIN_D="#BE8A64",
+    JEAN="#2E3647",JEAN_D="#242B39",SHOE="#1A1F29";
 
-function seg(a,b,w,col,cap){
-  ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap=cap||"round"; ctx.lineJoin="round";
+function seg(a,b,w,col){
+  ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap="round"; ctx.lineJoin="round";
   ctx.beginPath(); ctx.moveTo(P[a].x,P[a].y); ctx.lineTo(P[b].x,P[b].y); ctx.stroke();
 }
 function joint(i,r,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(P[i].x,P[i].y,r,0,Math.PI*2); ctx.fill(); }
-function hand(i){
-  var p=P[i], e=P[i===IDX.lha?IDX.lel:IDX.rel];
-  var ang=Math.atan2(p.y-e.y,p.x-e.x);
+function hand(i,el){
+  var p=P[i], e=P[el], ang=Math.atan2(p.y-e.y,p.x-e.x);
   ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
-  ctx.fillStyle=SKIN;
-  ctx.beginPath(); ctx.ellipse(2*u,0,11*u,8.5*u,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=SKIN_D;
-  ctx.beginPath(); ctx.ellipse(-2*u,-7*u,5*u,3.2*u,-0.5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=SKIN; ctx.beginPath(); ctx.ellipse(2*u,0,11*u,8.5*u,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=SKIN_D; ctx.beginPath(); ctx.ellipse(-2*u,-7*u,5*u,3.2*u,-0.5,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
 function shoe(i,kn){
-  var p=P[i], k=P[kn];
-  var ang=Math.atan2(p.y-k.y,p.x-k.x);
+  var p=P[i], k=P[kn], ang=Math.atan2(p.y-k.y,p.x-k.x);
   ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang+Math.PI/2);
-  ctx.fillStyle=SHOE;
-  ctx.beginPath(); ctx.ellipse(6*u,2*u,15*u,8*u,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=SHOE; ctx.beginPath(); ctx.ellipse(6*u,2*u,15*u,8*u,0,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
-
 function draw(){
   ctx.clearRect(0,0,W,H);
   var h=P[IDX.head];
-
   if(tied){
     ctx.strokeStyle="#E4D2CB"; ctx.lineWidth=2; ctx.setLineDash([5,6]);
     ctx.beginPath(); ctx.moveTo(P[IDX.anchor].x,0); ctx.lineTo(h.x,h.y); ctx.stroke();
     ctx.setLineDash([]);
   }
-
   ctx.fillStyle="rgba(58,46,51,.05)";
   ctx.beginPath(); ctx.ellipse(cx,FLOORY-4,100*u,11*u,0,0,Math.PI*2); ctx.fill();
 
-  // legs
   shoe(IDX.lfo,IDX.lkn); shoe(IDX.rfo,IDX.rkn);
   seg(IDX.lhi,IDX.lkn,22*u,JEAN); seg(IDX.lkn,IDX.lfo,18*u,JEAN_D);
   seg(IDX.rhi,IDX.rkn,22*u,JEAN); seg(IDX.rkn,IDX.rfo,18*u,JEAN_D);
   joint(IDX.lkn,9*u,JEAN_D); joint(IDX.rkn,9*u,JEAN_D);
 
-  // neck
   seg(IDX.head,IDX.neck,17*u,SKIN_D);
 
-  // torso
-  var ls=P[IDX.lsh], rs=P[IDX.rsh], lh=P[IDX.lhi], rh=P[IDX.rhi], ch=P[IDX.chest];
+  var ls=P[IDX.lsh],rs=P[IDX.rsh],lh=P[IDX.lhi],rh=P[IDX.rhi],ch=P[IDX.chest];
   ctx.fillStyle=SHIRT;
   ctx.beginPath();
   ctx.moveTo(ls.x,ls.y);
   ctx.quadraticCurveTo((ls.x+rs.x)/2,(ls.y+rs.y)/2-10*u,rs.x,rs.y);
-  ctx.quadraticCurveTo(rs.x+(rh.x-rs.x)*0.5+6*u, (rs.y+rh.y)/2, rh.x,rh.y);
+  ctx.quadraticCurveTo(rs.x+(rh.x-rs.x)*0.5+6*u,(rs.y+rh.y)/2,rh.x,rh.y);
   ctx.quadraticCurveTo((lh.x+rh.x)/2,(lh.y+rh.y)/2+10*u,lh.x,lh.y);
   ctx.quadraticCurveTo(ls.x+(lh.x-ls.x)*0.5-6*u,(ls.y+lh.y)/2,ls.x,ls.y);
   ctx.closePath(); ctx.fill();
-  seg(IDX.lsh,IDX.rsh,26*u,SHIRT);
-  seg(IDX.lhi,IDX.rhi,24*u,SHIRT);
-  // collar + fold
+  seg(IDX.lsh,IDX.rsh,26*u,SHIRT); seg(IDX.lhi,IDX.rhi,24*u,SHIRT);
   ctx.strokeStyle=SHIRT_D; ctx.lineWidth=3*u; ctx.lineCap="round";
   ctx.beginPath();
   ctx.moveTo(ch.x+(ls.x-ch.x)*0.42, ch.y+(ls.y-ch.y)*0.42);
   ctx.quadraticCurveTo(ch.x,ch.y+4*u, ch.x+(rs.x-ch.x)*0.42, ch.y+(rs.y-ch.y)*0.42);
   ctx.stroke();
 
-  // arms: sleeve then forearm
-  seg(IDX.lsh,IDX.lel,18*u,SHIRT_D); seg(IDX.rsh,IDX.rel,18*u,SHIRT_D);
   seg(IDX.lsh,IDX.lel,18*u,SHIRT); seg(IDX.rsh,IDX.rel,18*u,SHIRT);
   joint(IDX.lsh,13*u,SHIRT); joint(IDX.rsh,13*u,SHIRT);
   seg(IDX.lel,IDX.lha,13*u,SKIN); seg(IDX.rel,IDX.rha,13*u,SKIN);
   joint(IDX.lel,6.5*u,SKIN_D); joint(IDX.rel,6.5*u,SKIN_D);
-  hand(IDX.lha); hand(IDX.rha);
+  hand(IDX.lha,IDX.lel); hand(IDX.rha,IDX.rel);
 
-  // head
   var r=headR();
   ctx.save();
   ctx.beginPath(); ctx.arc(h.x,h.y,r,0,Math.PI*2); ctx.closePath();
   ctx.shadowColor="rgba(58,46,51,.2)"; ctx.shadowBlur=16; ctx.shadowOffsetY=5;
   ctx.fillStyle="#fff"; ctx.fill(); ctx.shadowBlur=0; ctx.shadowOffsetY=0;
   ctx.clip();
-  if(face.complete && face.naturalWidth) ctx.drawImage(face,h.x-r,h.y-r,r*2,r*2);
+  if(face.complete&&face.naturalWidth) ctx.drawImage(face,h.x-r,h.y-r,r*2,r*2);
   ctx.restore();
-  ctx.strokeStyle="#fff"; ctx.lineWidth=4; 
+  ctx.strokeStyle="#fff"; ctx.lineWidth=4;
   ctx.beginPath(); ctx.arc(h.x,h.y,r,0,Math.PI*2); ctx.stroke();
 
-  // grab hints until she has played
   if(pulls<1 && !Object.keys(drags).length){
     ctx.strokeStyle="rgba(192,64,95,.4)"; ctx.lineWidth=2;
     var pulse=Math.sin(Date.now()/400)*2;
@@ -315,12 +318,11 @@ function draw(){
     });
   }
 }
-
-function loop(){ verlet(); constrain(); draw(); requestAnimationFrame(loop); }
+function loop(){ verlet(); solve(); draw(); requestAnimationFrame(loop); }
 
 function grabbed(i){ for(var id in drags){ if(drags[id].i===i) return true; } return false; }
 function nearest(x,y){
-  var best=null, bd=54*u;
+  var best=null,bd=54*u;
   for(var i=1;i<P.length;i++){
     if(grabbed(i)) continue;
     var d=Math.hypot(P[i].x-x,P[i].y-y);
@@ -329,10 +331,9 @@ function nearest(x,y){
   return best;
 }
 cv.addEventListener("pointerdown",function(e){
-  var i=nearest(e.clientX,e.clientY);
-  if(i===null) return;
+  var i=nearest(e.clientX,e.clientY); if(i===null) return;
   drags[e.pointerId]={i:i,x:e.clientX,y:e.clientY};
-  if(cv.setPointerCapture) try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  if(cv.setPointerCapture){ try{ cv.setPointerCapture(e.pointerId); }catch(err){} }
   e.preventDefault();
 },{passive:false});
 cv.addEventListener("pointermove",function(e){
@@ -342,12 +343,15 @@ cv.addEventListener("pointermove",function(e){
 function release(e){
   if(!drags[e.pointerId]) return;
   delete drags[e.pointerId];
-  pulls++; countEl.textContent = pulls + (pulls===1?" pull":" pulls");
+  pulls++; countEl.textContent=pulls+(pulls===1?" pull":" pulls");
 }
 cv.addEventListener("pointerup",release);
 cv.addEventListener("pointercancel",release);
 cv.addEventListener("lostpointercapture",release);
 
+cutBtn.addEventListener("click",function(){
+  if(tied){ tied=false; cutBtn.textContent="String cut"; cutBtn.disabled=true; }
+});
 resetBtn.addEventListener("click",function(){ drags={}; build(); });
 window.addEventListener("resize",resize);
 window.addEventListener("orientationchange",function(){ setTimeout(resize,200); });
